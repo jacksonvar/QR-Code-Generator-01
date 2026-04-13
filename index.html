@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QR Code Generator</title>
+   <link rel="icon" type="image/png" href="https://image2url.com/r2/default/images/1775542348884-4938bd88-9727-4ed0-aa82-69ff8c3e2d74.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- QR Code Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 350px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .generate-btn {
+      background: #007bff;
+      color: white;
+    }
+
+    .generate-btn:hover {
+      background: #0056b3;
+    }
+
+    .clear-btn {
+      background: #dc3545;
+      color: white;
+    }
+
+    .clear-btn:hover {
+      background: #a71d2a;
+    }
+
+    #qrcode {
+      margin-top: 25px;
+      display: flex;
+      justify-content: center; /* 👈 Center QR horizontally */
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>QR Code Generator</h2>
+
+    <input type="text" id="urlInput" placeholder="Enter URL here..." />
+
+    <div class="btn-group">
+      <button class="generate-btn" onclick="generateQR()">Generate</button>
+      <button class="clear-btn" onclick="clearQR()">Clear</button>
+    </div>
+
+    <div id="qrcode"></div>
+  </div>
+
+  <script>
+    function generateQR() {
+      const url = document.getElementById("urlInput").value;
+      const qrContainer = document.getElementById("qrcode");
+
+      qrContainer.innerHTML = "";
+
+      if (!url) {
+        alert("Please enter a URL");
+        return;
+      }
+
+      new QRCode(qrContainer, {
+        text: url,
+        width: 200,
+        height: 200,
+      });
+    }
+
+    function clearQR() {
+      document.getElementById("urlInput").value = "";
+      document.getElementById("qrcode").innerHTML = "";
+    }
+  </script>
+
+</body>
+</html>
