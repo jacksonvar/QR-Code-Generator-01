@@ -2,125 +2,769 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>QR Code Generator</title>
-   <link rel="icon" type="image/png" href="https://image2url.com/r2/default/images/1775542348884-4938bd88-9727-4ed0-aa82-69ff8c3e2d74.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- QR Code Library -->
+  <meta name="theme-color" content="#080b1c">
+  <title>Heroes: End of Time | QR Portal</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
   <style>
+    :root {
+      --night: #070918;
+      --blue: #111b3d;
+      --red: #ff344f;
+      --gold: #ffd477;
+      --green: #9dffbd;
+      --muted: #aeb8d4;
+    }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; scroll-behavior: smooth; }
     body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+      min-height: 100vh; margin: 0; padding: 34px 18px;
+      display: grid; place-items: center; overflow-x: hidden;
+      color: #f7f8ff; font-family: Inter, ui-sans-serif, system-ui, Arial, sans-serif;
+      background:
+        radial-gradient(ellipse at 50% 5%, rgba(91,77,179,.28), transparent 38%),
+        radial-gradient(ellipse at 8% 78%, rgba(255,48,83,.16), transparent 32%),
+        radial-gradient(ellipse at 92% 70%, rgba(23,128,180,.18), transparent 34%),
+        linear-gradient(145deg, #050714 0%, #10152e 48%, #080b1b 100%);
+      isolation: isolate;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: -3; pointer-events: none;
+      opacity: .55;
+      background-image:
+        radial-gradient(1px 1px at 12% 20%, #fff 98%, transparent),
+        radial-gradient(2px 2px at 76% 15%, #c6d9ff 98%, transparent),
+        radial-gradient(1px 1px at 42% 78%, #fff 98%, transparent),
+        radial-gradient(1px 1px at 88% 58%, #ffe4a8 98%, transparent),
+        radial-gradient(2px 2px at 25% 88%, #fff 98%, transparent);
+      background-size: 230px 210px, 310px 280px, 190px 250px, 370px 300px, 270px 330px;
+      animation: starDrift 38s linear infinite;
+    }
+    body::after {
+      content: ""; position: fixed; inset: -20%; z-index: -4; pointer-events: none;
+      background:
+        conic-gradient(from 30deg at 50% 48%, transparent 0 20%, rgba(112,75,198,.07) 25%, transparent 36% 57%, rgba(255,57,88,.06) 63%, transparent 74%),
+        radial-gradient(ellipse at 50% 50%, transparent 28%, rgba(0,0,0,.42) 75%);
+      animation: nebula 24s ease-in-out infinite alternate;
+    }
+    .scene { position: fixed; inset: 0; z-index: -2; overflow: hidden; pointer-events: none; }
+    .portal {
+      position: absolute; width: min(48vw, 600px); aspect-ratio: 1; border-radius: 50%;
+      border: 1px solid rgba(130,155,255,.14);
+      box-shadow: inset 0 0 70px rgba(87,83,206,.08), 0 0 100px rgba(75,93,190,.08);
+      background: repeating-radial-gradient(ellipse at center, transparent 0 32px, rgba(142,128,255,.07) 33px 34px, transparent 35px 65px);
+      filter: blur(.2px); opacity: .65;
+    }
+    .portal.one { left: -18%; top: 12%; transform: rotate(-18deg) scaleY(.7); }
+    .portal.two { right: -20%; bottom: -15%; transform: rotate(25deg) scaleY(.75); border-color: rgba(255,93,112,.16); }
+    .web {
+      position: absolute; width: 300px; height: 300px; opacity: .45;
+      background:
+        repeating-conic-gradient(from 0deg, transparent 0deg 14deg, rgba(221,232,255,.58) 14.15deg 14.45deg, transparent 14.7deg 30deg),
+        repeating-radial-gradient(circle at 0 0, transparent 0 25px, rgba(221,232,255,.52) 25.7px 26.3px, transparent 27px 48px);
+      -webkit-mask-image: radial-gradient(circle at 0 0, #000 0 68%, transparent 76%);
+      mask-image: radial-gradient(circle at 0 0, #000 0 68%, transparent 76%);
+      filter: drop-shadow(0 0 5px rgba(205,224,255,.3));
+    }
+    .web.top-left { top: -8px; left: -8px; }
+    .web.top-right { top: -8px; right: -8px; transform: scaleX(-1); }
+    .web.bottom-left { bottom: -8px; left: -8px; transform: scaleY(-1); }
+    .web.bottom-right { bottom: -8px; right: -8px; transform: scale(-1); }
+    .hero-shadow {
+      position: absolute; left: 50%; bottom: -65px; transform: translateX(-50%);
+      width: 300px; height: 390px; opacity: .13; filter: blur(1px);
+    }
+    .hero-shadow svg { width: 100%; height: 100%; }
+    .sparks { position: absolute; inset: 0; overflow: hidden; }
+    .spark {
+      position: absolute; width: 3px; height: 3px; border-radius: 50%;
+      background: #fff1c4; box-shadow: 0 0 10px 3px rgba(255,208,117,.65);
+      animation: floatUp var(--dur, 9s) linear infinite; opacity: 0;
     }
 
-    .container {
-      background: #fff;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      text-align: center;
-      width: 350px;
+    .app {
+      width: min(100%, 900px); position: relative; z-index: 1;
+      padding: clamp(18px, 3vh, 28px) clamp(20px, 4vw, 38px); border-radius: 24px;
+      border: 1px solid rgba(183,198,255,.23);
+      background: linear-gradient(145deg, rgba(17,23,48,.88), rgba(7,10,26,.88));
+      box-shadow: 0 30px 100px rgba(0,0,0,.5), inset 0 1px rgba(255,255,255,.08);
+      backdrop-filter: blur(18px);
     }
-
-    h2 {
-      margin-bottom: 20px;
+    .app::before {
+      content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
+      background: linear-gradient(130deg, rgba(255,92,115,.7), transparent 30%, rgba(122,155,255,.45) 70%, rgba(255,211,133,.45));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
     }
-
+    .topline {
+      display: flex; justify-content: center; align-items: center; gap: 10px;
+      color: #c7d1ef; font-size: 11px; letter-spacing: .24em; text-transform: uppercase;
+    }
+    .pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 12px var(--green); }
+    h1 {
+      margin: 14px 0 8px; text-align: center; font-size: clamp(30px, 6vw, 54px);
+      line-height: 1.03; letter-spacing: -.04em; font-weight: 850;
+      background: linear-gradient(100deg, #fff 15%, #c8d7ff 48%, #ffb7bd 80%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      text-shadow: 0 0 35px rgba(134,144,255,.13);
+    }
+    .subtitle { text-align: center; margin: 0 0 18px; color: var(--muted); font-size: 14px; }
+    .generator { max-width: 590px; margin: auto; }
+    label { display: block; margin: 0 0 9px; color: #dce4ff; font-size: 13px; font-weight: 650; }
+    .input-wrap { position: relative; }
     input {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 14px;
+      width: 100%; min-height: 54px; padding: 0 16px; border-radius: 12px;
+      color: white; font-size: 15px; outline: none;
+      border: 1px solid rgba(169,187,245,.28);
+      background: rgba(3,7,22,.7); transition: .2s;
     }
-
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
-
+    input::placeholder { color: #7884a7; }
+    input:focus { border-color: #9caeff; box-shadow: 0 0 0 3px rgba(128,151,255,.13), 0 0 24px rgba(107,126,255,.1); }
+    .actions { display: flex; gap: 12px; margin-top: 14px; }
     button {
-      flex: 1;
-      padding: 10px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      font-size: 14px;
+      border: 0; border-radius: 11px; min-height: 48px; padding: 0 20px;
+      font-size: 14px; font-weight: 750; cursor: pointer; transition: transform .2s, filter .2s, box-shadow .2s;
+    }
+    button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.12); }
+    button:active:not(:disabled) { transform: translateY(0) scale(.99); }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+    .generate {
+      flex: 1; color: #fff; background: linear-gradient(110deg, #fa3d5c, #a91f4d 52%, #6e3d9c);
+      box-shadow: 0 8px 24px rgba(211,43,89,.24), inset 0 1px rgba(255,255,255,.22);
+    }
+    .clear { color: #d9e2ff; background: rgba(104,124,179,.16); border: 1px solid rgba(180,197,255,.2); }
+    .result { display: none; margin: 14px auto 0; max-width: 360px; text-align: center; }
+    .result.show { display: block; }
+    .result-title { color: #dce4ff; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; margin-bottom: 13px; }
+    .qr-stage {
+      position: relative; display: grid; place-items: center; min-height: 270px;
+      padding: 20px; isolation: isolate;
+    }
+    .qr-stage::before {
+      content: ""; position: absolute; width: 260px; height: 260px; border-radius: 50%;
+      background: conic-gradient(from 0deg, transparent, rgba(255,204,105,.7), transparent, rgba(105,255,188,.6), transparent);
+      filter: blur(16px); opacity: 0; transform: scale(.55) rotate(-90deg); z-index: -1;
+    }
+    .qr-paper {
+      position: relative; z-index: 2; padding: 10px; border-radius: 13px;
+      background: white; box-shadow: 0 12px 50px rgba(0,0,0,.35);
+      transform: scale(.75); opacity: 0;
+    }
+    #qrcode { width: 200px; min-width: 200px; min-height: 200px; display: grid; place-items: center; }
+    #qrcode canvas, #qrcode img { display: block; width: 200px !important; height: 200px !important; image-rendering: pixelated; }
+    /* Animated silk web is an overlay only; the actual QR remains untouched underneath. */
+    .web-weave {
+      position: absolute; z-index: 5; width: 224px; height: 224px;
+      left: 50%; top: 50%; transform: translate(-50%,-50%);
+      overflow: visible; pointer-events: none; opacity: 0;
+      filter: drop-shadow(0 0 5px rgba(160,220,255,.8));
+    }
+    .web-weave path, .web-weave circle {
+      fill: none; stroke: #e8f5ff; stroke-width: 1.35;
+      stroke-linecap: round; stroke-linejoin: round;
+      stroke-dasharray: 900; stroke-dashoffset: 900;
+    }
+    .web-weave .silk-accent { stroke: #ff647d; stroke-width: 1.1; }
+    .web-spider {
+      position: absolute; z-index: 6; left: 50%; top: 5%;
+      width: 25px; height: 31px; opacity: 0; transform: translate(-50%,-25px);
+      pointer-events: none; filter: drop-shadow(0 0 7px rgba(225,245,255,.9));
+    }
+    .web-spider svg { width: 100%; height: 100%; }
+    .silk-thread {
+      position: absolute; z-index: 4; left: 50%; top: 0; height: 42%;
+      border-left: 1px solid rgba(226,244,255,.85); opacity: 0;
+      transform-origin: top;
+    }
+    .trickster-aura {
+      position: absolute; z-index: 1; width: 180px; height: 180px; border-radius: 50%;
+      left: 50%; top: 50%; transform: translate(-50%,-50%) scale(.2);
+      background: radial-gradient(circle, rgba(135,255,180,.22), rgba(255,206,105,.12) 38%, transparent 70%);
+      filter: blur(5px); opacity: 0;
+    }
+    .particles { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+    .particle {
+      position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; border-radius: 50%;
+      background: var(--particle, #ffd477); box-shadow: 0 0 12px 3px var(--particle, #ffd477);
+      opacity: 0; transform: translate(-50%,-50%);
+    }
+    .qr-paper { opacity: 1; transform: none; }
+    .result.animating .qr-paper { animation: qrReveal 1.25s cubic-bezier(.2,.8,.2,1) .95s both; }
+    .result.ready .qr-paper { opacity: 1; transform: none; animation: none; }
+    .result.animating .qr-stage::before { animation: ringPulse 2.1s ease-out .1s forwards; }
+    .result.animating .web-weave { animation: webOverlay 2.35s ease-in-out both; }
+    .result.animating .web-weave path,
+    .result.animating .web-weave circle { animation: silkDraw 1.45s ease-out .12s forwards; }
+    .result.animating .web-weave .silk-accent { animation-delay: .42s; }
+    .result.animating .web-spider { animation: spiderDrop 1.35s ease-in-out both; }
+    .result.animating .silk-thread { animation: threadDrop 1.25s ease-out both; }
+    .result.animating .trickster-aura { animation: auraAppear 1.35s ease-out .15s both; }
+    .result.animating .particle { animation: particleBurst 1.25s ease-out var(--delay, .25s) both; }
+    .result.animating .particle:nth-child(odd) { --particle: #a4ffc5; }
+    .result.animating .particle:nth-child(3n) { --particle: #ffd477; }
+    .download {
+      width: 100%; color: #101525; background: linear-gradient(100deg, #ffe3a2, #f4bd61);
+      box-shadow: 0 8px 24px rgba(245,190,96,.18);
+    }
+    .message { min-height: 20px; margin: 13px 0 0; text-align: center; color: #aeb8d4; font-size: 12px; }
+    .footnote { margin-top: 14px; text-align: center; color: #687495; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; }
+
+    @keyframes starDrift { to { background-position: 230px -210px, -310px 280px, 190px -250px, -370px 300px, 270px -330px; } }
+    @keyframes nebula { from { transform: rotate(-8deg) scale(1); } to { transform: rotate(8deg) scale(1.08); } }
+    @keyframes floatUp { 0% { transform: translate3d(0,25px,0) scale(.4); opacity: 0; } 15% { opacity: .8; } 85% { opacity: .5; } 100% { transform: translate3d(var(--drift, 20px),-110vh,0) scale(1.2); opacity: 0; } }
+    @keyframes qrReveal { 0% { transform: scale(.72) rotateY(70deg); opacity: 0; } 55% { transform: scale(1.06) rotateY(-8deg); opacity: 1; } 100% { transform: scale(1) rotateY(0); opacity: 1; } }
+    @keyframes ringPulse { 0% { opacity: 0; transform: scale(.5) rotate(-90deg); } 35% { opacity: .9; transform: scale(1.15) rotate(35deg); } 100% { opacity: .12; transform: scale(1.4) rotate(110deg); } }
+    @keyframes webOverlay {
+      0% { opacity: 0; transform: translate(-50%,-50%) scale(.78) rotate(-8deg); }
+      18%,72% { opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%,-50%) scale(1.08) rotate(5deg); }
+    }
+    @keyframes silkDraw { to { stroke-dashoffset: 0; } }
+    @keyframes spiderDrop {
+      0% { opacity: 0; transform: translate(-50%,-28px) rotate(-12deg); }
+      18%,70% { opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%,145px) rotate(12deg); }
+    }
+    @keyframes threadDrop { 0% { opacity: 0; transform: scaleY(.2); } 20%,70% { opacity: .9; transform: scaleY(1); } 100% { opacity: 0; } }
+    @keyframes auraAppear { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.2); } 40% { opacity: 1; transform: translate(-50%,-50%) scale(1.2); } 100% { opacity: 0; transform: translate(-50%,-50%) scale(1.8); } }
+    @keyframes particleBurst { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.2); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(.1); } }
+
+    @media (max-width: 520px) {
+      body { padding: 18px 12px; }
+      .app { padding: 25px 17px; border-radius: 20px; }
+      .actions { flex-direction: column; }
+      .clear { width: 100%; }
+      .web { width: 190px; height: 190px; opacity: .32; }
+      .hero-shadow { width: 210px; height: 290px; }
+      .qr-stage { min-height: 250px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
     }
 
-    .generate-btn {
-      background: #007bff;
-      color: white;
+    /* Cinematic crossover redesign: all characters and artwork are original. */
+    body {
+      background:
+        radial-gradient(ellipse at 50% -5%, rgba(192,40,77,.24), transparent 45%),
+        radial-gradient(ellipse at 5% 45%, rgba(21,77,149,.28), transparent 36%),
+        radial-gradient(ellipse at 96% 40%, rgba(31,147,89,.22), transparent 37%),
+        radial-gradient(ellipse at 50% 100%, rgba(117,45,149,.22), transparent 52%),
+        #030611;
+    }
+    .apocalypse-horizon {
+      position: absolute; inset: auto 0 0; height: 38%;
+      background: linear-gradient(transparent,rgba(3,5,15,.86)),
+        repeating-linear-gradient(90deg,transparent 0 45px,rgba(7,12,28,.7) 45px 80px,transparent 80px 100px);
+      clip-path: polygon(0 42%,5% 39%,8% 70%,12% 61%,16% 31%,21% 34%,24% 75%,30% 55%,35% 63%,40% 28%,44% 60%,50% 40%,54% 67%,61% 35%,65% 69%,72% 48%,77% 60%,82% 25%,87% 62%,92% 37%,96% 56%,100% 42%,100% 100%,0 100%);
+      opacity: .65;
+    }
+    .cosmic-crack {
+      position: absolute; width: 2px; height: 75vh; top: -10vh;
+      background: linear-gradient(transparent,#ff3c70,#cbb3ff,#ffd68a,transparent);
+      box-shadow: 0 0 22px 5px rgba(253,62,107,.35);
+      opacity: .5;
+      clip-path: polygon(0 0,100% 0,100% 28%,0 31%,100% 58%,0 62%,100% 100%,0 100%);
+      transform: rotate(25deg);
+    }
+    .crack-left { left: 16%; }
+    .crack-right { right: 17%; transform: rotate(-25deg); filter: hue-rotate(130deg); }
+    .character {
+      position: absolute; bottom: -24px; width: clamp(155px, 19vw, 280px);
+      height: clamp(290px, 52vh, 440px); opacity: .77;
+      filter: drop-shadow(0 0 25px rgba(255,72,109,.26));
+      animation: characterFloat 7s ease-in-out infinite alternate;
+    }
+    .character svg { width: 100%; height: 100%; }
+    .web-guardian { left: 1%; transform: rotate(-7deg); }
+    .time-weaver { right: 2%; filter: drop-shadow(0 0 27px rgba(113,255,164,.3)); animation-delay: -2s; }
+    .iron-tyrant { right: 18%; opacity: .3; filter: drop-shadow(0 0 32px rgba(255,72,90,.2)); animation-delay: -4s; }
+    .character-label {
+      position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+      font-size: 9px; letter-spacing: .18em; white-space: nowrap; color: #d8dffc;
+      text-shadow: 0 2px 12px black;
+    }
+    .app { border-color: rgba(255,194,134,.34); background: linear-gradient(145deg,rgba(11,15,35,.92),rgba(5,8,22,.93)); }
+    h1 { font-weight: 900; letter-spacing: -.055em; }
+    .title-accent { color: #ff5c70; -webkit-text-fill-color: #ff5c70; }
+    .topline { color: #ffcd88; }
+    .generate { background: linear-gradient(105deg,#f52b4d,#9a235e 52%,#344da6); }
+    .download { background: linear-gradient(105deg,#f8dca0,#e9a94f); }
+    .web { opacity: .66; }
+    @keyframes characterFloat { from { translate: 0 0; } to { translate: 0 -12px; } }
+
+    @media (min-width: 700px) and (max-height: 850px) {
+      body { padding-top: 8px; padding-bottom: 8px; }
+      .app { padding-top: 16px; padding-bottom: 16px; }
+      h1 { margin-top: 9px; font-size: clamp(28px, 4.5vh, 42px); }
+      .subtitle { margin-bottom: 12px; }
+      .qr-stage { min-height: 220px; }
+      .result { margin-top: 9px; }
+      .footnote { margin-top: 8px; }
+      .topline { font-size: 9px; }
+    }
+    @media (max-width: 800px) {
+      .character { opacity: .22; }
+      .iron-tyrant { display: none; }
+      .web-guardian { left: -65px; }
+      .time-weaver { right: -65px; }
+      .character-label { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) { .character { animation: none; } }
+
+    .timeline-clock {
+      position: fixed; top: 16px; right: 18px; z-index: 20;
+      display: flex; align-items: stretch; gap: 0;
+      padding: 10px 12px; border: 1px solid rgba(255,190,125,.42);
+      border-radius: 13px;
+      background: linear-gradient(135deg, rgba(8,13,32,.92), rgba(20,17,42,.88));
+      box-shadow: 0 8px 30px rgba(0,0,0,.35), 0 0 22px rgba(255,70,105,.12), inset 0 1px rgba(255,255,255,.08);
+      backdrop-filter: blur(12px);
+      font-variant-numeric: tabular-nums;
+    }
+    .clock-heading {
+      align-self: center; margin-right: 11px; padding-right: 11px;
+      border-right: 1px solid rgba(180,198,255,.2);
+      color: #ffd18b; font-size: 8px; line-height: 1.35;
+      letter-spacing: .16em; font-weight: 800; text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .clock-unit { min-width: 34px; text-align: center; }
+    .clock-value {
+      display: block; color: #f5f7ff; font-size: 17px; line-height: 1.05;
+      font-weight: 850; text-shadow: 0 0 12px rgba(150,190,255,.35);
+    }
+    .clock-label {
+      display: block; margin-top: 4px; color: #9eaccf;
+      font-size: 7px; letter-spacing: .12em; font-weight: 750;
+    }
+    .clock-unit:nth-child(3) .clock-value { color: #ff7187; }
+    .clock-unit:nth-child(4) .clock-value { color: #a8ffc5; }
+    .clock-unit:nth-child(5) .clock-value { color: #ffd58b; }
+    .clock-live {
+      position: absolute; top: -4px; right: -4px; width: 7px; height: 7px;
+      border-radius: 50%; background: #9dffbd;
+      box-shadow: 0 0 9px 3px rgba(116,255,177,.55);
+      animation: clockPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes clockPulse { 50% { opacity: .45; transform: scale(.75); } }
+    @media (max-width: 650px) {
+      .timeline-clock { top: 9px; right: 9px; padding: 7px 8px; transform: scale(.88); transform-origin: top right; }
+      .clock-heading { font-size: 7px; margin-right: 7px; padding-right: 7px; }
+      .clock-unit { min-width: 28px; }
+      .clock-value { font-size: 14px; }
+      .clock-label { font-size: 6px; }
+      body { padding-top: 64px; }
     }
 
-    .generate-btn:hover {
-      background: #0056b3;
+    .universe-brand {
+      position: fixed; top: 14px; right: 18px; z-index: 21;
+      display: flex; flex-direction: column; align-items: flex-end;
+      gap: 3px; padding: 0 2px 8px;
+      text-align: right; pointer-events: none;
+    }
+    .brand-kicker {
+      color: #aebbd9; font-size: 7px; font-weight: 800;
+      letter-spacing: .29em; line-height: 1.2;
+      text-shadow: 0 0 12px rgba(155,180,255,.35);
+    }
+    .brand-name {
+      position: relative; color: #f5f7ff;
+      font-size: clamp(15px, 1.55vw, 21px); line-height: 1;
+      font-weight: 950; letter-spacing: .075em;
+      text-transform: uppercase;
+      text-shadow: 0 2px 0 rgba(0,0,0,.55), 0 0 17px rgba(255,72,105,.25);
+    }
+    .brand-name em {
+      color: #ff627b; font-style: normal;
+      text-shadow: 0 0 15px rgba(255,75,111,.4);
+    }
+    .brand-orbit {
+      position: absolute; right: -8px; top: -8px;
+      width: 32px; height: 32px; border: 1px solid rgba(255,205,130,.42);
+      border-radius: 50%; transform: scaleX(1.8) rotate(-28deg);
+      box-shadow: 0 0 14px rgba(255,190,110,.12);
+    }
+    .timeline-clock { top: 68px; }
+    @media (max-width: 650px) {
+      .universe-brand { top: 8px; right: 10px; gap: 2px; }
+      .brand-kicker { font-size: 6px; }
+      .brand-name { font-size: 14px; }
+      .timeline-clock { top: 53px; right: 9px; }
+      body { padding-top: 105px; }
     }
 
-    .clear-btn {
-      background: #dc3545;
-      color: white;
+    .daily-quote {
+      position: fixed; top: 142px; right: 18px; z-index: 19;
+      width: min(340px, calc(100vw - 28px)); padding: 13px 16px 12px;
+      border: 1px solid rgba(255,190,125,.28); border-radius: 12px;
+      background: linear-gradient(135deg, rgba(8,13,32,.9), rgba(20,17,42,.88));
+      box-shadow: 0 8px 28px rgba(0,0,0,.28), inset 0 1px rgba(255,255,255,.06);
+      backdrop-filter: blur(12px); text-align: center;
+    }
+    .quote-eyebrow {
+      color: #e7bd80; font-size: 7px; letter-spacing: .2em; font-weight: 800;
+      white-space: nowrap;
+    }
+    .quote-star { color: #ff667e; padding: 0 4px; }
+    .daily-quote blockquote {
+      margin: 9px 0 10px; color: #f0f3ff; font-family: Georgia, serif;
+      font-size: 13px; line-height: 1.45; font-style: italic;
+      text-shadow: 0 0 14px rgba(153,174,255,.18);
+    }
+    .quote-footer { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .quote-footer span { width: 24px; height: 1px; background: linear-gradient(90deg, transparent, #b88a56); }
+    .quote-footer span:last-child { transform: rotate(180deg); }
+    .quote-footer b { color: #8998bb; font-size: 7px; letter-spacing: .18em; }
+    @media (max-width: 650px) {
+      .daily-quote {
+        position: relative; top: auto; right: auto; width: min(100%, 440px);
+        margin: 114px auto 12px; padding: 10px 13px;
+      }
+      .daily-quote blockquote { font-size: 12px; margin: 7px 0; }
     }
 
-    .clear-btn:hover {
-      background: #a71d2a;
+    /* Compact edge-docked quote: keep it in the narrow gap below the clock. */
+    .daily-quote {
+      position: fixed !important;
+      top: 138px !important;
+      right: 12px !important;
+      left: auto !important;
+      width: min(350px, 37vw) !important;
+      min-width: 0 !important;
+      padding: 8px 12px 8px !important;
+      border-right: 12px !important;
+      border-top-right-radius: 0 !important;
+      border-bottom-right-radius: 0 !important;
+      z-index: 19;
+    }
+    .daily-quote .quote-eyebrow {
+      font-size: 5px !important;
+      letter-spacing: .12em !important;
+    }
+    .daily-quote blockquote {
+      margin: 3px 0 4px !important;
+      font-size: 9px !important;
+      line-height: 1.18 !important;
+    }
+    .daily-quote .quote-footer { gap: 5px; }
+    .daily-quote .quote-footer span { width: 14px; }
+    .daily-quote .quote-footer b {
+      font-size: 5px !important;
+      letter-spacing: .11em !important;
+    }
+    @media (max-width: 650px) {
+      .daily-quote {
+        top: 98px !important;
+        right: 12px !important;
+        width: min(255px, 64vw) !important;
+        margin: 0 !important;
+        padding: 6px 8px !important;
+      }
+      .daily-quote blockquote { font-size: 10px !important; line-height: 1.28 !important; }
     }
 
-    #qrcode {
-      margin-top: 25px;
-      display: flex;
-      justify-content: center; /* 👈 Center QR horizontally */
-      align-items: center;
-    }
   </style>
 </head>
 <body>
+  <div class="universe-brand" aria-label="Pratham Universe">
+    <span class="brand-orbit" aria-hidden="true"></span>
+    <span class="brand-kicker">THE MULTIVERSE EXPERIENCE</span>
+    <span class="brand-name">PRATHAM <em>UNIVERSE</em></span>
+  </div>
+  <aside class="timeline-clock" aria-label="Live local date and time">
+    <span class="clock-live"></span>
+    <div class="clock-heading">Live<br>Timeline</div>
+    <div class="clock-unit"><span class="clock-value" id="clockYear">----</span><span class="clock-label">YEAR</span></div>
+    <div class="clock-unit"><span class="clock-value" id="clockDay">---</span><span class="clock-label">DAY</span></div>
+    <div class="clock-unit"><span class="clock-value" id="clockHour">--</span><span class="clock-label">HOUR</span></div>
+    <div class="clock-unit"><span class="clock-value" id="clockMinute">--</span><span class="clock-label">MIN</span></div>
+    <div class="clock-unit"><span class="clock-value" id="clockSecond">--</span><span class="clock-label">SEC</span></div>
+  </aside>
 
-  <div class="container">
-    <h2>QR Code Generator</h2>
-
-    <input type="text" id="urlInput" placeholder="Enter URL here..." />
-
-    <div class="btn-group">
-      <button class="generate-btn" onclick="generateQR()">Generate</button>
-      <button class="clear-btn" onclick="clearQR()">Clear</button>
+  <div class="scene" aria-hidden="true">
+    <div class="apocalypse-horizon"></div>
+    <div class="cosmic-crack crack-left"></div>
+    <div class="cosmic-crack crack-right"></div>
+    <div class="character web-guardian">
+      <svg viewBox="0 0 260 420" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="wg" x2="1" y2="1"><stop stop-color="#b70e2d"/><stop offset=".55" stop-color="#3e142e"/><stop offset="1" stop-color="#091d46"/></linearGradient></defs>
+        <path d="M119 22Q65 35 71 100L47 161L8 245L52 269L89 216L72 338L52 420H205L186 338L171 216L208 269L252 245L213 161L190 100Q195 35 140 22Z" fill="url(#wg)" stroke="#f15c75" stroke-width="3"/>
+        <path d="M86 91L121 101L100 121L80 114M174 91L139 101L160 121L180 114" fill="#a6e6ff" stroke="#fff" stroke-width="2"/>
+        <path d="M130 31V210M72 92L188 176M188 92L72 176M68 146L193 146M85 195L172 195" stroke="#c7d9ff" stroke-opacity=".45" stroke-width="2"/>
+        <path d="M130 210L93 254L130 292L168 254Z" fill="#112952" stroke="#e64863" stroke-width="3"/>
+        <path d="M92 275L74 419M168 275L187 419" stroke="#e34860" stroke-width="6"/>
+      </svg>
+      <span class="character-label">THE WEB GUARDIAN</span>
     </div>
-
-    <div id="qrcode"></div>
+    <div class="character time-weaver">
+      <svg viewBox="0 0 290 430" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="tw" x2="1" y2="1"><stop stop-color="#1d4e47"/><stop offset=".6" stop-color="#10222c"/><stop offset="1" stop-color="#050e1a"/></linearGradient></defs>
+        <path d="M141 38Q101 40 102 89L85 126L32 173L8 247L52 263L100 195L61 430H230L190 195L238 263L282 247L258 173L205 126L188 89Q189 40 141 38Z" fill="url(#tw)" stroke="#d1a85a" stroke-width="3"/>
+        <path d="M117 39L91 5L130 29L146 19L161 29L201 5L175 39" fill="#162b30" stroke="#cda95d" stroke-width="4"/>
+        <path d="M115 88L139 97L128 105M172 88L148 97L159 105" stroke="#b5ffb3" stroke-width="5"/>
+        <path d="M144 128V330M95 150L144 191L193 150M85 244L144 283L203 244" stroke="#d8bc6d" stroke-width="4"/>
+        <circle cx="32" cy="240" r="22" fill="none" stroke="#a3ffad" stroke-width="4"/>
+        <circle cx="258" cy="240" r="22" fill="none" stroke="#ffd98b" stroke-width="4"/>
+        <path d="M32 240Q144 145 258 240" fill="none" stroke="#c1fdb4" stroke-width="3" stroke-dasharray="7 9"/>
+      </svg>
+      <span class="character-label">THE TIME WEAVER</span>
+    </div>
+    <div class="character iron-tyrant">
+      <svg viewBox="0 0 270 420" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="it" x2="1" y2="1"><stop stop-color="#3b4657"/><stop offset=".6" stop-color="#141d2e"/><stop offset="1" stop-color="#050912"/></linearGradient></defs>
+        <path d="M125 18L86 39L68 110L28 142L3 262L61 283L81 215L68 420H206L193 215L213 283L267 262L242 142L202 110L184 39L145 18Z" fill="url(#it)" stroke="#a1acb6" stroke-width="4"/>
+        <path d="M91 51L179 51L166 119L105 119Z" fill="#0c111a" stroke="#7c8694" stroke-width="3"/>
+        <path d="M103 84L129 91M167 84L141 91" stroke="#ff475d" stroke-width="7"/>
+        <path d="M137 126L137 250M80 172L137 197L195 172M86 287L137 312L187 287" stroke="#b43b4e" stroke-width="5"/>
+        <path d="M108 25L137 3L163 25" stroke="#a1acb6" stroke-width="7" fill="none"/>
+      </svg>
+      <span class="character-label">THE IRON TYRANT</span>
+    </div>
+    <div class="portal one"></div><div class="portal two"></div>
+    <div class="web top-left"></div><div class="web top-right"></div>
+    <div class="web bottom-left"></div><div class="web bottom-right"></div>
+    <div class="hero-shadow">
+      <!-- Original abstract masked web-guardian silhouette -->
+      <svg viewBox="0 0 300 390" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M150 20C103 20 75 58 76 102L45 154L84 171L69 242L24 390H276L231 242L216 171L255 154L224 102C225 58 197 20 150 20Z" fill="#02040c" stroke="#a7b9ff" stroke-opacity=".5" stroke-width="3"/>
+        <path d="M95 93L140 107L112 124L89 115M205 93L160 107L188 124L211 115" stroke="#d7e3ff" stroke-width="5" stroke-linecap="round"/>
+        <path d="M150 35V160M80 75L220 145M220 75L80 145M50 160L250 160" stroke="#d7e3ff" stroke-opacity=".25" stroke-width="2"/>
+        <path d="M85 180L150 220L215 180M68 270L150 310L232 270" stroke="#ff536d" stroke-opacity=".5" stroke-width="4"/>
+      </svg>
+    </div>
+    <div class="sparks" id="ambientSparks"></div>
   </div>
 
+
+  <section class="daily-quote" aria-live="polite" aria-label="Daily inspiration">
+    <div class="quote-eyebrow"><span class="quote-star">✦</span> TRANSMISSION FROM THE MULTIVERSE <span class="quote-star">✦</span></div>
+    <blockquote id="dailyQuote">Loading today's transmission…</blockquote>
+    <div class="quote-footer"><span></span><b id="quoteDayLabel">DAILY INSPIRATION</b><span></span></div>
+  </section>
+  <main class="app">
+    <div class="topline"><span class="pulse-dot"></span> THE FINAL MULTIVERSE • QR PORTAL <span class="pulse-dot"></span></div>
+    <h1>HEROES <span class="title-accent">ASSEMBLE</span></h1>
+    <p class="subtitle">Across the shattered multiverse, every destination has a portal.</p>
+
+    <section class="generator">
+      <label for="urlInput">ENTER YOUR URL OR TEXT</label>
+      <div class="input-wrap">
+        <input id="urlInput" type="text" placeholder="https://your-universe.com" autocomplete="off" maxlength="2000">
+      </div>
+      <div class="actions">
+        <button class="generate" id="generateBtn" type="button">Open QR Portal <span aria-hidden="true">✦</span></button>
+        <button class="clear" id="clearBtn" type="button">Clear</button>
+      </div>
+
+      <section class="result" id="result" aria-live="polite">
+        <div class="result-title">Dimensional link stabilized</div>
+        <div class="qr-stage" id="qrStage">
+          <div class="trickster-aura"></div>
+          <div class="silk-thread"></div>
+          <div class="web-spider" aria-hidden="true">
+            <svg viewBox="0 0 30 36" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="15" cy="20" rx="6" ry="8" fill="#101b2d" stroke="#eaf6ff" stroke-width="1.2"/>
+              <circle cx="15" cy="9" r="5" fill="#17253c" stroke="#eaf6ff" stroke-width="1.2"/>
+              <g stroke="#eaf6ff" stroke-width="1.5" stroke-linecap="round" fill="none">
+                <path d="M11 15L3 10L1 5M9 19L2 19L1 24M10 24L4 30L2 34M19 15L27 10L29 5M21 19L28 19L29 24M20 24L26 30L28 34"/>
+              </g>
+                <circle cx="13" cy="8" r="1" fill="#ff637c"/><circle cx="17" cy="8" r="1" fill="#ff637c"/>
+            </svg>
+          </div>
+          <svg class="web-weave" viewBox="0 0 220 220" aria-hidden="true">
+            <g>
+              <path d="M110 8 L110 212 M8 110 L212 110 M28 28 L192 192 M192 28 L28 192"/>
+              <path d="M110 8 Q85 45 110 65 Q135 45 110 8 M212 110 Q175 85 155 110 Q175 135 212 110 M110 212 Q85 175 110 155 Q135 175 110 212 M8 110 Q45 85 65 110 Q45 135 8 110"/>
+              <path d="M54 54 Q110 25 166 54 Q195 110 166 166 Q110 195 54 166 Q25 110 54 54Z"/>
+              <path d="M77 77 Q110 59 143 77 Q161 110 143 143 Q110 161 77 143 Q59 110 77 77Z"/>
+              <path class="silk-accent" d="M110 8 Q55 60 8 110 Q58 160 110 212 Q162 160 212 110 Q162 60 110 8Z"/>
+              <path class="silk-accent" d="M28 28 Q110 82 192 28 M28 192 Q110 138 192 192"/>
+            </g>
+          </svg>
+          <div class="particles" id="particles"></div>
+          <div class="qr-paper"><div id="qrcode"></div></div>
+        </div>
+        <button class="download" id="downloadBtn" type="button" disabled>↓ &nbsp; Download QR Code</button>
+      </section>
+      <p class="message" id="message" role="status"></p>
+    </section>
+    <div class="footnote">THE WEB • THE TIMELINES • THE FINAL BATTLE</div>
+  </main>
+
   <script>
+    const input = document.getElementById("urlInput");
+    const result = document.getElementById("result");
+    const qrContainer = document.getElementById("qrcode");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const message = document.getElementById("message");
+    let generatedValue = "";
+    let revealTimer;
+
+    function createAmbientSparks() {
+      const holder = document.getElementById("ambientSparks");
+      for (let i = 0; i < 34; i++) {
+        const dot = document.createElement("i");
+        dot.className = "spark";
+        dot.style.left = Math.random() * 100 + "%";
+        dot.style.top = (45 + Math.random() * 70) + "%";
+        dot.style.setProperty("--dur", (8 + Math.random() * 13) + "s");
+        dot.style.setProperty("--drift", (Math.random() * 100 - 50) + "px");
+        dot.style.animationDelay = (-Math.random() * 18) + "s";
+        holder.appendChild(dot);
+      }
+    }
+
+    function createBurstParticles() {
+      const holder = document.getElementById("particles");
+      holder.innerHTML = "";
+      for (let i = 0; i < 30; i++) {
+        const dot = document.createElement("i");
+        const angle = (Math.PI * 2 * i) / 30;
+        const distance = 90 + Math.random() * 90;
+        dot.className = "particle";
+        dot.style.setProperty("--x", (Math.cos(angle) * distance) + "px");
+        dot.style.setProperty("--y", (Math.sin(angle) * distance) + "px");
+        dot.style.setProperty("--delay", (0.18 + Math.random() * .35) + "s");
+        holder.appendChild(dot);
+      }
+    }
+
     function generateQR() {
-      const url = document.getElementById("urlInput").value;
-      const qrContainer = document.getElementById("qrcode");
-
-      qrContainer.innerHTML = "";
-
-      if (!url) {
-        alert("Please enter a URL");
+      const value = input.value.trim();
+      if (!value) {
+        message.textContent = "Enter a URL or text to open your portal.";
+        result.classList.remove("show", "animating", "ready");
+        return;
+      }
+      if (typeof QRCode === "undefined") {
+        message.textContent = "QR library could not load. Check your internet connection and try again.";
         return;
       }
 
+      clearTimeout(revealTimer);
+      qrContainer.innerHTML = "";
+      generatedValue = value;
       new QRCode(qrContainer, {
-        text: url,
-        width: 200,
-        height: 200,
+        text: value, width: 200, height: 200,
+        colorDark: "#101827", colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
       });
+
+      createBurstParticles();
+      result.classList.remove("animating", "ready");
+      result.classList.add("show");
+      // Restart the cinematic reveal on every generation.
+      void result.offsetWidth;
+      result.classList.add("animating");
+      downloadBtn.disabled = true;
+      message.textContent = "Weaving your QR code in a silk web…";
+      revealTimer = window.setTimeout(() => {
+        result.classList.remove("animating");
+        result.classList.add("ready");
+        downloadBtn.disabled = false;
+        message.textContent = "Web complete. Your QR code is ready to scan or download.";
+      }, 2350);
+    }
+
+    function downloadQR() {
+      if (!generatedValue) {
+        message.textContent = "Generate a QR code before downloading.";
+        return;
+      }
+      const canvas = qrContainer.querySelector("canvas");
+      const image = qrContainer.querySelector("img");
+      let dataUrl = "";
+      if (canvas) dataUrl = canvas.toDataURL("image/png");
+      else if (image && image.src) dataUrl = image.src;
+
+      if (!dataUrl) {
+        message.textContent = "The QR image is not ready yet. Please try again.";
+        return;
+      }
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = "qr-dimension.png";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      message.textContent = "QR code downloaded successfully.";
     }
 
     function clearQR() {
-      document.getElementById("urlInput").value = "";
-      document.getElementById("qrcode").innerHTML = "";
+      clearTimeout(revealTimer);
+      input.value = "";
+      qrContainer.innerHTML = "";
+      result.classList.remove("show", "animating", "ready");
+      downloadBtn.disabled = true;
+      generatedValue = "";
+      message.textContent = "";
     }
-  </script>
 
+    document.getElementById("generateBtn").addEventListener("click", generateQR);
+    document.getElementById("clearBtn").addEventListener("click", clearQR);
+    downloadBtn.addEventListener("click", downloadQR);
+    input.addEventListener("keydown", event => {
+      if (event.key === "Enter") generateQR();
+    });
+
+
+    // Original superhero-multiverse-inspired lines; each browser keeps a used-quote
+    // record so a line is not repeated on a later day until the collection is exhausted.
+    const dailyQuotes = ["Even the smallest spark can challenge the darkest universe.", "Your next chapter begins the moment you choose to rise.", "Power is not what you hold; it is what you protect.", "When the world fractures, become the force that brings it together.", "Every impossible mission starts with one brave decision.", "Be the light you once searched for in the darkness.", "Greatness is built in the moments when nobody is watching.", "Your past may shape you, but it does not command your future.", "Stand firm. Even galaxies are born from chaos.", "The strongest shield is a heart that refuses to surrender.", "One bold choice can change the course of a thousand timelines.", "Do not wait for destiny. Give it a reason to find you.", "Heroes are made when comfort ends and courage begins.", "Let your actions speak louder than the thunder around you.", "Every setback is a portal to a wiser version of you.", "Your limits are questions. Courage is the answer.", "Protect your purpose like the universe depends on it.", "Even in a broken timeline, hope can find a way.", "Be relentless in your effort and humble in your power.", "Today is another chance to rewrite your story.", "Fear may enter the room, but it does not get the final word.", "Turn pressure into purpose and obstacles into momentum.", "Some battles are won simply by refusing to quit.", "Your choices are the threads that weave your future.", "Do something today that tomorrow-you will be proud of.", "True strength is staying kind when the world gets difficult.", "Fall seven times; rise with a better plan on the eighth.", "Every new dawn is a fresh universe waiting to be explored.", "Do not shrink your dreams to fit someone else's horizon.", "Be the calm mind in the middle of the cosmic storm.", "Small acts of courage create extraordinary destinies.", "The universe changes when you decide to change.", "Never confuse a difficult chapter with the end of the story.", "Your courage can become someone else's reason to keep going.", "Build with patience. Rise with purpose. Lead with compassion.", "Even a single voice can echo across a thousand worlds.", "Make your discipline stronger than your excuses.", "Every challenge carries a lesson disguised as a storm.", "Choose progress over perfection, one day at a time.", "Your best power is the good you choose to do with it.", "Let yesterday teach you, not chain you.", "Be brave enough to begin before you feel ready.", "Where others see an ending, look for the hidden doorway.", "Your future is not fixed; it is forged by today's actions.", "Stay curious. Stay courageous. Keep moving forward.", "Do not let a temporary shadow convince you that the light is gone.", "Real leadership begins with taking responsibility.", "Rise above the noise and stay true to your mission.", "Make every second count in the timeline you have.", "Hope is not passive; it is courage in motion.", "Your character is revealed by what you do with your power.", "Turn your scars into maps, not walls.", "Bravery is taking the next step while your hands are still shaking.", "Even the longest night gives way to a new horizon.", "Protect what matters. Pursue what inspires. Become what you admire.", "Your greatest comeback can begin on an ordinary day.", "Do not chase the spotlight; become worthy of the responsibility.", "One team, one purpose, countless possibilities.", "Let setbacks sharpen your focus, never steal your fire.", "Your mission is bigger than the doubt in your mind.", "Choose courage when fear offers an easier path.", "Be a builder of bridges, not barriers.", "Every second is a chance to make a better choice.", "Strength without compassion is only force.", "Keep your vision clear when the universe gets loud.", "Today, be the reason somebody believes in good again.", "Dream beyond the horizon, then do the work to reach it.", "Your resolve can outlast the storm.", "Do not measure your journey against another hero's timeline.", "Make room for wonder, even on the hardest days.", "Great things begin when ordinary people refuse to give up.", "Let purpose guide your power.", "Your next victory may be one patient step away.", "Be steady in chaos and generous in success.", "Every problem looks smaller when faced with a clear plan.", "Carry your values into every universe you enter.", "Do not fear starting over; fear never starting at all.", "Turn your energy toward what you can change.", "An unshaken spirit is a force of its own.", "Be bold enough to imagine, disciplined enough to build.", "Even the darkest dimension cannot erase a determined mind.", "Your actions today are tomorrow's origin story.", "Make kindness your signature move.", "Keep going; the breakthrough may be closer than it appears.", "Lead with courage, act with integrity, finish with grace.", "Every challenge is an invitation to discover your strength.", "Be the person who brings people together when worlds collide.", "Let your ambition soar and your principles keep you grounded.", "One focused hour can change the direction of your day.", "Do not wait for perfect conditions to do meaningful work.", "Your resilience is stronger than a difficult moment.", "Find the lesson, keep the hope, take the next step.", "Make your presence a source of courage for others.", "Some of the greatest powers are patience and self-control.", "Stand for something good, even when standing is hard.", "Keep creating the future you wish existed.", "Your story deserves another brave page.", "Move with purpose; the universe notices consistency.", "Be fearless in pursuit and thoughtful in action.", "Let every ending make space for a wiser beginning.", "Today is yours to shape. Make it count."];
+    function showDailyQuote() {
+      const today = new Date();
+      const dateKey = today.getFullYear() + "-" +
+        String(today.getMonth() + 1).padStart(2, "0") + "-" +
+        String(today.getDate()).padStart(2, "0");
+      const storageKey = "prathamUniverseQuoteHistoryV1";
+      let history = {};
+      try { history = JSON.parse(localStorage.getItem(storageKey) || "{}") || {}; }
+      catch (error) { history = {}; }
+
+      if (!history.todayByDate) history.todayByDate = {};
+      if (!Array.isArray(history.used)) history.used = [];
+
+      let quoteIndex = history.todayByDate[dateKey];
+      if (!Number.isInteger(quoteIndex) || quoteIndex < 0 || quoteIndex >= dailyQuotes.length) {
+        const used = new Set(history.used);
+        const available = dailyQuotes.map((_, index) => index).filter(index => !used.has(index));
+        if (available.length === 0) {
+          // All lines have been shown: start a fresh cycle, avoiding yesterday's final line.
+          const lastIndex = history.used.length ? history.used[history.used.length - 1] : -1;
+          history.used = [];
+          const fresh = dailyQuotes.map((_, index) => index).filter(index => index !== lastIndex);
+          quoteIndex = fresh[Math.floor(Math.random() * fresh.length)];
+        } else {
+          quoteIndex = available[Math.floor(Math.random() * available.length)];
+        }
+        history.used.push(quoteIndex);
+        history.todayByDate[dateKey] = quoteIndex;
+        // Keep the date map compact while retaining the used-index history.
+        const dates = Object.keys(history.todayByDate).sort();
+        while (dates.length > 400) delete history.todayByDate[dates.shift()];
+        try { localStorage.setItem(storageKey, JSON.stringify(history)); } catch (error) {}
+      }
+
+      document.getElementById("dailyQuote").textContent = "“" + dailyQuotes[quoteIndex] + "”";
+      document.getElementById("quoteDayLabel").textContent =
+        "DAILY INSPIRATION • " + today.toLocaleDateString(undefined, { month: "short", day: "numeric" }).toUpperCase();
+    }
+    showDailyQuote();
+
+    function updateTimelineClock() {
+      const now = new Date();
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      const dayOfYear = Math.floor((now - startOfYear) / 86400000) + 1;
+      document.getElementById("clockYear").textContent = now.getFullYear();
+      document.getElementById("clockDay").textContent = String(dayOfYear).padStart(3, "0");
+      document.getElementById("clockHour").textContent = String(now.getHours()).padStart(2, "0");
+      document.getElementById("clockMinute").textContent = String(now.getMinutes()).padStart(2, "0");
+      document.getElementById("clockSecond").textContent = String(now.getSeconds()).padStart(2, "0");
+    }
+    updateTimelineClock();
+    window.setInterval(updateTimelineClock, 1000);
+
+    createAmbientSparks();
+  </script>
 </body>
 </html>
