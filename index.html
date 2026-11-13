@@ -208,6 +208,7 @@
       box-shadow: 0 8px 24px rgba(245,190,96,.18);
     }
     .message { min-height: 20px; margin: 13px 0 0; text-align: center; color: #aeb8d4; font-size: 12px; }
+    .message.error { color: #ff4d6d; font-weight: 700; }
     .footnote { margin-top: 14px; text-align: center; color: #687495; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; }
 
     @keyframes starDrift { to { background-position: 230px -210px, -310px 280px, 190px -250px, -370px 300px, 270px -330px; } }
@@ -692,6 +693,23 @@
       }
     }
 
+
+    .input-label-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:9px; }
+    .input-label-row > label { margin:0; }
+    .multi-links-toggle, .add-link-btn { min-height:32px; padding:0 12px; border-radius:9px; color:#ffe0a5; background:rgba(255,190,110,.10); border:1px solid rgba(255,190,110,.38); font-size:11px; font-weight:800; white-space:nowrap; }
+    .multi-links-panel { margin-top:12px; padding:14px; border-radius:13px; border:1px solid rgba(255,190,125,.25); background:rgba(3,7,22,.56); }
+    .multi-links-panel[hidden] { display:none !important; }
+    .multi-links-help, .multi-links-note { margin:0 0 12px; color:#aeb8d4; font-size:11px; line-height:1.5; }
+    .multi-links-note { margin:10px 0 0; font-size:10px; }
+    .multi-link-row { margin-top:10px; }
+    .multi-link-row label { margin-bottom:6px; font-size:11px; color:#e0e7ff; }
+    .multi-link-row input { min-height:43px; font-size:12px; padding:0 12px; }
+    .extra-link-controls { display:grid; grid-template-columns:minmax(100px,.7fr) minmax(0,1.5fr) auto; gap:8px; align-items:end; margin-top:10px; }
+    .extra-link-controls select { width:100%; min-height:43px; border-radius:10px; padding:0 9px; color:#fff; background:#101831; border:1px solid rgba(169,187,245,.28); font-size:12px; }
+    .extra-link-controls input { width:100%; min-height:43px; padding:0 10px; font-size:12px; }
+    .remove-link-btn { min-height:43px; padding:0 10px; color:#ffc0c9; background:rgba(255,52,79,.12); border:1px solid rgba(255,90,110,.3); font-size:11px; }
+    @media (max-width:600px) { .input-label-row { align-items:flex-start; flex-wrap:wrap; } .multi-links-toggle { margin-left:auto; } .extra-link-controls { grid-template-columns:1fr; } }
+
   </style>
 </head>
 <body>
@@ -776,10 +794,25 @@
     <p class="subtitle">Across the shattered multiverse, every destination has a portal.</p>
 
     <section class="generator">
-      <label for="urlInput">ENTER YOUR URL OR TEXT</label>
-      <div class="input-wrap">
+      <div class="input-label-row">
+        <label for="urlInput">ENTER YOUR URL OR TEXT</label>
+        <button class="multi-links-toggle" id="multiLinksToggle" type="button" aria-expanded="false">＋ Multi Links</button>
+      </div>
+      <div class="input-wrap" id="singleLinkWrap">
         <input id="urlInput" type="text" placeholder="https://your-universe.com" autocomplete="off" maxlength="2000">
       </div>
+      <section class="multi-links-panel" id="multiLinksPanel" hidden aria-label="Multi-link settings">
+        <p class="multi-links-help">One QR code, with destinations selected automatically by device.</p>
+        <div class="multi-link-row"><label for="androidLink">Android</label>
+          <input id="androidLink" type="url" placeholder="Enter Android / Google Play URL" autocomplete="url"></div>
+        <div class="multi-link-row"><label for="appleLink">Apple</label>
+          <input id="appleLink" type="url" placeholder="Enter Apple / App Store URL" autocomplete="url"></div>
+        <div class="multi-link-row"><label for="fallbackLink">Other / fallback</label>
+          <input id="fallbackLink" type="url" placeholder="Enter fallback website URL" autocomplete="url"></div>
+        <div id="extraLinks"></div>
+        <button class="add-link-btn" id="addLinkBtn" type="button">＋ Add link</button>
+        <p class="multi-links-note">Enter the destination URLs. The QR code will route Android, Apple, and other devices to the matching destination.</p>
+      </section>
       <div class="actions">
         <button class="generate" id="generateBtn" type="button">Open QR Portal <span aria-hidden="true">✦</span></button>
         <button class="clear" id="clearBtn" type="button">Clear</button>
@@ -828,6 +861,114 @@
     const message = document.getElementById("message");
     let generatedValue = "";
     let revealTimer;
+    let multiLinksEnabled = false;
+    const multiLinksToggle = document.getElementById("multiLinksToggle");
+    const multiLinksPanel = document.getElementById("multiLinksPanel");
+    const singleLinkWrap = document.getElementById("singleLinkWrap");
+    const extraLinksHolder = document.getElementById("extraLinks");
+
+    // Permanent public URL of this page. Never build smart QR links from a
+    // temporary editor, preview, or codex-inline URL.
+    const SMART_REDIRECT_BASE = "https://jacksonvar.github.io/QR-Code-Generator-01/index_multi_links.html";
+
+    // A smart QR scan lands on this GitHub Pages URL and redirects by device OS.
+    (function handleSmartRedirect() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("smart") !== "1") return;
+
+      const ua = navigator.userAgent || "";
+      const platform = navigator.platform || "";
+      const isIPadOS = platform === "MacIntel" && navigator.maxTouchPoints > 1;
+      const isApple = /iPhone|iPad|iPod/i.test(ua) || isIPadOS;
+      const isAndroid = /Android/i.test(ua);
+
+      const platformDestination = isAndroid ? params.get("android") :
+        (isApple ? params.get("apple") : null);
+      const candidate = platformDestination || params.get("fallback");
+      // Redirect only to a valid destination explicitly encoded in the QR.
+      // Fallback is optional; if it is blank, leave the user on this page.
+      try {
+        const parsed = new URL(candidate || "");
+        if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+          window.location.replace(parsed.href);
+        } else {
+          document.addEventListener("DOMContentLoaded", () => {
+            const status = document.getElementById("message");
+            if (status) status.textContent = "No destination was configured for this device.";
+          });
+        }
+      } catch (_) {
+        document.addEventListener("DOMContentLoaded", () => {
+          const status = document.getElementById("message");
+          if (status) status.textContent = "No destination was configured for this device.";
+        });
+      }
+    })();
+
+    function validWebUrl(value) {
+      try { const u = new URL(value.trim()); return u.protocol === "https:" || u.protocol === "http:"; }
+      catch (e) { return false; }
+    }
+
+    multiLinksToggle.addEventListener("click", () => {
+      multiLinksEnabled = !multiLinksEnabled;
+      multiLinksPanel.hidden = !multiLinksEnabled;
+      singleLinkWrap.hidden = multiLinksEnabled;
+      multiLinksToggle.setAttribute("aria-expanded", String(multiLinksEnabled));
+      multiLinksToggle.textContent = multiLinksEnabled ? "− Single Link" : "＋ Multi Links";
+      setMessage("");
+    });
+
+    document.getElementById("addLinkBtn").addEventListener("click", () => {
+      const row = document.createElement("div");
+      row.className = "extra-link-controls";
+      row.innerHTML = `<select aria-label="Device type"><option value="other">Other / fallback</option><option value="android">Android</option><option value="apple">Apple</option></select><input type="url" placeholder="https://your-destination.com" aria-label="Additional destination URL"><button class="remove-link-btn" type="button">Remove</button>`;
+      row.querySelector("button").addEventListener("click", () => row.remove());
+      extraLinksHolder.appendChild(row);
+    });
+
+    function buildSmartLink() {
+      // All fields are optional individually, but at least two device types
+      // must have destinations.
+      const destinations = { android: "", apple: "", other: "" };
+      const enteredTypes = new Set();
+      const fields = [
+        ["android", document.getElementById("androidLink").value.trim()],
+        ["apple", document.getElementById("appleLink").value.trim()],
+        ["other", document.getElementById("fallbackLink").value.trim()]
+      ];
+
+      for (const [type, raw] of fields) {
+        if (!raw) continue;
+        if (!validWebUrl(raw)) throw new Error("Please correct the invalid URL. Use a complete http:// or https:// link.");
+        enteredTypes.add(type);
+        destinations[type] = raw;
+      }
+
+      for (const row of extraLinksHolder.querySelectorAll(".extra-link-controls")) {
+        const type = row.querySelector("select").value;
+        const raw = row.querySelector("input").value.trim();
+        if (!raw) continue;
+        if (!validWebUrl(raw)) throw new Error("Please correct the invalid additional URL. Use a complete http:// or https:// link.");
+        if (enteredTypes.has(type)) {
+          throw new Error("Please use only one destination for each device type.");
+        }
+        enteredTypes.add(type);
+        destinations[type] = raw;
+      }
+
+      if (enteredTypes.size < 2) {
+        throw new Error("Please enter at least 2 valid links. You can use any combination of the available fields.");
+      }
+
+      // This is the public landing page which performs the OS-based redirect.
+      const smart = new URL(SMART_REDIRECT_BASE);
+      smart.searchParams.set("smart", "1");
+      if (destinations.android) smart.searchParams.set("android", destinations.android);
+      if (destinations.apple) smart.searchParams.set("apple", destinations.apple);
+      if (destinations.other) smart.searchParams.set("fallback", destinations.other);
+      return smart.toString();
+    }
 
     function createAmbientSparks() {
       const holder = document.getElementById("ambientSparks");
@@ -858,46 +999,65 @@
       }
     }
 
+    function setMessage(text, isError = false) {
+      message.textContent = text;
+      message.classList.toggle("error", isError);
+      message.setAttribute("role", isError ? "alert" : "status");
+    }
+
     function generateQR() {
-      const value = input.value.trim();
-      if (!value) {
-        message.textContent = "Enter a URL or text to open your portal.";
-        result.classList.remove("show", "animating", "ready");
-        return;
-      }
-      if (typeof QRCode === "undefined") {
-        message.textContent = "QR library could not load. Check your internet connection and try again.";
-        return;
-      }
-
       clearTimeout(revealTimer);
-      qrContainer.innerHTML = "";
-      generatedValue = value;
-      new QRCode(qrContainer, {
-        text: value, width: 200, height: 200,
-        colorDark: "#101827", colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-      });
+      let value = "";
+      try {
+        value = multiLinksEnabled ? buildSmartLink() : input.value.trim();
+        if (!value) throw new Error("Enter a URL or text to generate a QR code.");
+        if (typeof QRCode === "undefined") {
+          throw new Error("The QR library could not load. Check your internet connection and try again.");
+        }
 
-      createBurstParticles();
-      result.classList.remove("animating", "ready");
-      result.classList.add("show");
-      // Restart the cinematic reveal on every generation.
-      void result.offsetWidth;
-      result.classList.add("animating");
-      downloadBtn.disabled = true;
-      message.textContent = "Weaving your QR code in a silk web…";
-      revealTimer = window.setTimeout(() => {
-        result.classList.remove("animating");
-        result.classList.add("ready");
-        downloadBtn.disabled = false;
-        message.textContent = "Web complete. Your QR code is ready to scan or download.";
-      }, 2350);
+        // Clear any previous result before creating the new QR.
+        qrContainer.innerHTML = "";
+        generatedValue = "";
+        downloadBtn.disabled = true;
+        new QRCode(qrContainer, {
+          text: value,
+          width: 200,
+          height: 200,
+          colorDark: "#101827",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+
+        // Confirm the QR library actually rendered an image/canvas.
+        if (!qrContainer.querySelector("canvas, img")) {
+          throw new Error("The QR code could not be rendered. Please try again with shorter URLs.");
+        }
+
+        generatedValue = value;
+        createBurstParticles();
+        result.classList.remove("animating", "ready");
+        result.classList.add("show");
+        void result.offsetWidth;
+        result.classList.add("animating");
+        setMessage("Generating your QR code…");
+        revealTimer = window.setTimeout(() => {
+          result.classList.remove("animating");
+          result.classList.add("ready");
+          downloadBtn.disabled = false;
+          setMessage("Your QR code is ready to scan or download.");
+        }, 2350);
+      } catch (error) {
+        qrContainer.innerHTML = "";
+        generatedValue = "";
+        result.classList.remove("show", "animating", "ready");
+        downloadBtn.disabled = true;
+        setMessage(error && error.message ? error.message : "Something went wrong while generating the QR code. Please check your links and try again.", true);
+      }
     }
 
     function downloadQR() {
       if (!generatedValue) {
-        message.textContent = "Generate a QR code before downloading.";
+        setMessage("Generate a QR code before downloading.", true);
         return;
       }
       const canvas = qrContainer.querySelector("canvas");
@@ -907,7 +1067,7 @@
       else if (image && image.src) dataUrl = image.src;
 
       if (!dataUrl) {
-        message.textContent = "The QR image is not ready yet. Please try again.";
+        setMessage("The QR image is not ready yet. Please try again.", true);
         return;
       }
       const link = document.createElement("a");
@@ -916,18 +1076,32 @@
       document.body.appendChild(link);
       link.click();
       link.remove();
-      message.textContent = "QR code downloaded successfully.";
+      setMessage("QR code downloaded successfully.");
     }
 
     function clearQR() {
       clearTimeout(revealTimer);
       input.value = "";
+      // Clear every multi-link field and remove any extra destination rows.
+      document.getElementById("androidLink").value = "";
+      document.getElementById("appleLink").value = "";
+      document.getElementById("fallbackLink").value = "";
+      extraLinksHolder.innerHTML = "";
       qrContainer.innerHTML = "";
       result.classList.remove("show", "animating", "ready");
       downloadBtn.disabled = true;
       generatedValue = "";
-      message.textContent = "";
+      setMessage("");
     }
+
+    // Clear a previous red validation message as soon as the user edits a field.
+    [input, document.getElementById("androidLink"), document.getElementById("appleLink"), document.getElementById("fallbackLink")]
+      .forEach(field => field.addEventListener("input", () => {
+        if (message.classList.contains("error")) setMessage("");
+      }));
+    extraLinksHolder.addEventListener("input", event => {
+      if (event.target.matches("input") && message.classList.contains("error")) setMessage("");
+    });
 
     document.getElementById("generateBtn").addEventListener("click", generateQR);
     document.getElementById("clearBtn").addEventListener("click", clearQR);
