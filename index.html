@@ -867,9 +867,8 @@
     const singleLinkWrap = document.getElementById("singleLinkWrap");
     const extraLinksHolder = document.getElementById("extraLinks");
 
-    // Permanent public URL of this page. Never build smart QR links from a
-    // temporary editor, preview, or codex-inline URL.
-    const SMART_REDIRECT_BASE = "https://jacksonvar.github.io/QR-Code-Generator-01/index_multi_links.html";
+    // Smart links return to this deployed homepage to select a device destination.
+    const SMART_REDIRECT_BASE = "https://jacksonvar.github.io/QR-Code-Generator-01/";
 
     // A smart QR scan lands on this GitHub Pages URL and redirects by device OS.
     (function handleSmartRedirect() {
