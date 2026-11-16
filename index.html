@@ -4,8 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#080b1c">
-  <title>Heroes: End of Time | QR Portal</title>
+  <title>Jacksonvar QR - Free QR Code Generator</title>
+  <meta name="description" content="Create a free QR code with Jacksonvar QR. Turn a website link or text into a scannable QR code and download it instantly.">
+  <link rel="canonical" href="https://jacksonvar.github.io/QR-Code-Generator-01/">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://jacksonvar.github.io/QR-Code-Generator-01/">
+  <meta property="og:title" content="Jacksonvar QR - Free QR Code Generator">
+  <meta property="og:description" content="Create a free QR code for a website link or text, then download it instantly.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Jacksonvar QR - Free QR Code Generator">
+  <meta name="twitter:description" content="Create a free QR code for a website link or text, then download it instantly.">
   <link rel="icon" type="image/png" href="./favicon.png">
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Jacksonvar QR",
+      "url": "https://jacksonvar.github.io/QR-Code-Generator-01/",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Web",
+      "description": "Create QR codes for website links and text, then download them instantly.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+  </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     :root {
@@ -280,8 +305,12 @@
     }
     .character svg { width: 100%; height: 100%; }
     .web-guardian { left: 1%; transform: rotate(-7deg); }
-    .time-weaver { right: 2%; filter: drop-shadow(0 0 27px rgba(113,255,164,.3)); animation-delay: -2s; }
-    .iron-tyrant { right: 18%; opacity: .3; filter: drop-shadow(0 0 32px rgba(255,72,90,.2)); animation-delay: -4s; }
+    .doom-character {
+      right: -4vw; bottom: -24px; width: clamp(300px, 38vw, 560px);
+      height: auto; aspect-ratio: 1080 / 608; opacity: .78;
+      filter: drop-shadow(0 0 15px rgba(45,255,100,.5)); animation-delay: -2s;
+    }
+    .doom-character img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
     .character-label {
       position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
       font-size: 9px; letter-spacing: .18em; white-space: nowrap; color: #d8dffc;
@@ -308,9 +337,8 @@
     }
     @media (max-width: 800px) {
       .character { opacity: .22; }
-      .iron-tyrant { display: none; }
       .web-guardian { left: -65px; }
-      .time-weaver { right: -65px; }
+      .doom-character { right: -65px; }
       .character-label { display: none; }
     }
     @media (prefers-reduced-motion: reduce) { .character { animation: none; } }
@@ -848,29 +876,9 @@
       </svg>
       <span class="character-label">THE WEB GUARDIAN</span>
     </div>
-    <div class="character time-weaver">
-      <svg viewBox="0 0 290 430" xmlns="http://www.w3.org/2000/svg">
-        <defs><linearGradient id="tw" x2="1" y2="1"><stop stop-color="#1d4e47"/><stop offset=".6" stop-color="#10222c"/><stop offset="1" stop-color="#050e1a"/></linearGradient></defs>
-        <path d="M141 38Q101 40 102 89L85 126L32 173L8 247L52 263L100 195L61 430H230L190 195L238 263L282 247L258 173L205 126L188 89Q189 40 141 38Z" fill="url(#tw)" stroke="#d1a85a" stroke-width="3"/>
-        <path d="M117 39L91 5L130 29L146 19L161 29L201 5L175 39" fill="#162b30" stroke="#cda95d" stroke-width="4"/>
-        <path d="M115 88L139 97L128 105M172 88L148 97L159 105" stroke="#b5ffb3" stroke-width="5"/>
-        <path d="M144 128V330M95 150L144 191L193 150M85 244L144 283L203 244" stroke="#d8bc6d" stroke-width="4"/>
-        <circle cx="32" cy="240" r="22" fill="none" stroke="#a3ffad" stroke-width="4"/>
-        <circle cx="258" cy="240" r="22" fill="none" stroke="#ffd98b" stroke-width="4"/>
-        <path d="M32 240Q144 145 258 240" fill="none" stroke="#c1fdb4" stroke-width="3" stroke-dasharray="7 9"/>
-      </svg>
-      <span class="character-label">THE TIME WEAVER</span>
-    </div>
-    <div class="character iron-tyrant">
-      <svg viewBox="0 0 270 420" xmlns="http://www.w3.org/2000/svg">
-        <defs><linearGradient id="it" x2="1" y2="1"><stop stop-color="#3b4657"/><stop offset=".6" stop-color="#141d2e"/><stop offset="1" stop-color="#050912"/></linearGradient></defs>
-        <path d="M125 18L86 39L68 110L28 142L3 262L61 283L81 215L68 420H206L193 215L213 283L267 262L242 142L202 110L184 39L145 18Z" fill="url(#it)" stroke="#a1acb6" stroke-width="4"/>
-        <path d="M91 51L179 51L166 119L105 119Z" fill="#0c111a" stroke="#7c8694" stroke-width="3"/>
-        <path d="M103 84L129 91M167 84L141 91" stroke="#ff475d" stroke-width="7"/>
-        <path d="M137 126L137 250M80 172L137 197L195 172M86 287L137 312L187 287" stroke="#b43b4e" stroke-width="5"/>
-        <path d="M108 25L137 3L163 25" stroke="#a1acb6" stroke-width="7" fill="none"/>
-      </svg>
-      <span class="character-label">THE IRON TYRANT</span>
+    <div class="character doom-character">
+      <img src="./assets/dr_doom.png" alt="" decoding="async">
+      <span class="character-label">DOCTOR DOOM</span>
     </div>
     <div class="portal one"></div><div class="portal two"></div>
     <div class="web top-left"></div><div class="web top-right"></div>
@@ -895,8 +903,8 @@
   </section>
   <main class="app">
     <div class="topline"><span class="pulse-dot"></span> THE FINAL MULTIVERSE • QR PORTAL <span class="pulse-dot"></span></div>
-    <h1>HEROES <span class="title-accent">ASSEMBLE</span></h1>
-    <p class="subtitle">Across the shattered multiverse, every destination has a portal.</p>
+    <h1>JACKSONVAR <span class="title-accent">QR</span></h1>
+    <p class="subtitle">Create and download QR codes for links and text in seconds.</p>
 
     <section class="generator">
       <div class="input-label-row">
