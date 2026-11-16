@@ -35,6 +35,10 @@ QR-Code-Generator-01/
 │
 ├── index.html
 ├── favicon.png
+├── assets
+    ├── climber-gwen.png
+    ├── climber-silhouette.png
+    ├── climber-spider.png
 └── README.md
 ```
 
