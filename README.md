@@ -39,6 +39,7 @@ QR-Code-Generator-01/
     ├── climber-gwen.png
     ├── climber-silhouette.png
     ├── climber-spider.png
+    ├── dr_doom.png
 └── README.md
 ```
 
